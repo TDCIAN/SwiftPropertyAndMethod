@@ -91,3 +91,58 @@ print(yagomPosition) // -15, -10
 - 관용적인 표현으로 newValue로 매개변수 이름을 대신할 수 있습니다.
 - 그럴 경우에는 매개변수를 따로 표기하지 말아야 합니다.
 - 또, 접근자 내부의 코드가 단 한 줄이고, 그 결과값의 타입이 프로퍼티의 타입과 같다면 return 키워드를 생략해도 그 결과값이 접근자의 반환값이 됩니다.
+- (코드) 매개변수 이름을 생략한 설정자
+```swift
+struct CoordinatePoint {
+  var x: Int // 저장 프로퍼티
+  var y: Int // 저장 프로퍼티
+  
+  // 대칭 좌표
+  var oppositePoint: CoordinatePoint { // 연산 프로퍼티
+    // 접근자
+    get {
+      // 이곳에서 return 키워드를 생략할 수 있습니다.
+      return CoordinatePoint(x: -x, y: -y)
+    }
+    
+    // 설정자
+    set {
+      x = -newValue.x
+      y = -newValue.y
+    }
+  }
+}
+```
+- 굳이 대칭점을 설정해줄 필요가 없으면 읽기 전용으로 연산 프로퍼티를 사용할 수도 있습니다.
+- 연산 프로퍼티를 읽기 전용으로 구현하려면 아래처럼 get 메서드만 사용합니다.
+- (코드) 읽기 전용 연산 프로퍼티
+```swift
+struct CoordinatePoint {
+  var x: Int // 저장 프로퍼티
+  var y: Int // 저장 프로퍼티
+  
+  // 대칭 좌표
+  var oppositePoint: CoordinatePoint { // 연산 프로퍼티
+    // 접근자
+    get {
+      return CoordinatePoint(x: -x, y: -y)
+    }
+  }
+}
+
+var yagomPosition: CoordinatePoint = CoordinatePoint(x: 10, y: 20)
+
+// 현재 좌표
+print(yagomPosition) // 10, 20
+
+// 대칭 좌표
+print(yagomPosition.oppositePoint) // -10, -20
+
+// 설정자를 구현하지 않았으므로 오류!!
+yagomPosition.oppositePoint = CoordinatePoint(x: 15, y: 10)
+```
+
+### 프로퍼티 감시자
+- 프로퍼티 감시자(Property Observers)를 사용하면 프로퍼티의 값이 변경됨에 따라 적절한 작업을 취할 수 있습니다.
+- 프로퍼티 감시자는 프로퍼티의 값이 새로 할당될 때마다 호출합니다.
+- 이때 변경되는 값이 현재의 값과 같더라도 호출합니다.
