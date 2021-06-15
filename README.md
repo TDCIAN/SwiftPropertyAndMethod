@@ -146,3 +146,84 @@ yagomPosition.oppositePoint = CoordinatePoint(x: 15, y: 10)
 - 프로퍼티 감시자(Property Observers)를 사용하면 프로퍼티의 값이 변경됨에 따라 적절한 작업을 취할 수 있습니다.
 - 프로퍼티 감시자는 프로퍼티의 값이 새로 할당될 때마다 호출합니다.
 - 이때 변경되는 값이 현재의 값과 같더라도 호출합니다.
+- 프로퍼티 감시자는 지연 저장 프로퍼티에 사용할 수 없으며 오로지 일반 저장 프로퍼티에만 적용할 수 있습니다.
+- 또한 프로퍼티 재정의(override)해 상속받은 저장 프로퍼티 또는 연산 프로퍼티에도 적용할 수 있습니다.
+- 물론 상속받지 않은 연산 프로퍼티에는 프로퍼티 감시자를 사용할 필요가 없으며 할 수도 없습니다.
+- 연산 프로퍼티의 접근자와 설정자를 통해 프로퍼티 감시자를 구현할 수 있기 때문입니다.
+- 연산 프로퍼티는 상속받았을 때만 프로퍼티 재정의를 통해 프로퍼티 감시자를 사용합니다.
+- 프로퍼티 감시자에는 프로퍼티의 값이 변경되기 직전에 호출하는 willSet 메서드와 프로퍼티의 값이 변경된 직후에 호출하는 didSet 메서드가 있습니다.
+- willSet 메서드와 didSet 메서드에는 매개변수가 하나씩 있습니다.
+- willSet 메서드에 전달되는 전달인자는 프로퍼티가 변경될 값이고, didSet 메서드에 전달되는 전달인자는 프로퍼티가 변경되기 전의 값입니다.
+- 그래서 매개변수의 이름을 따로 지정하지 않으면 willSet 메서드에는 newValue가, didSet 메서드에는 oldValue라는 매개변수 이름이 자동 지정됩니다.
+- (코드) 프로퍼티 감시자
+```swift
+class Account {
+  var credit: Int = 0 {
+    willSet {
+      print("잔액이 \(credit)원에서 \(newValue)원으로 변경될 예정입니다.")
+    }
+    didSet {
+      print("잔액이 \(oldValue)원에서 \(credit)원으로 변경되었습니다.")
+    }
+  }
+}
+
+let myAccount: Account = Account()
+// 잔액이 0원에서 1000원으로 변경될 예정입니다.
+
+myAccount.credit = 1000
+// 잔액이 0원에서 1000원으로 변경되었습니다.
+```
+- 클래스를 상속받았다면 기존의 연산 프로퍼티를 재정의하여 프로퍼티 감시자를 구현할 수도 있습니다.
+- 연산 프로퍼티를 재정의해도 기존의 연산 프로퍼티 기능(접근자와 설정자, get과 set 메서드)은 동작합니다.
+- (코드) 상속받은 연산 프로퍼티의 프로퍼티 감시자 구현
+```swift
+class Account {
+  var credit: Int = 0 { // 저장 프로퍼티
+    willSet {
+      print("잔액이 \(credit)원에서 \(newValue)원으로 변경될 예정입니다.")
+    }
+    didSet {
+      print("잔액이 \(oldValue)원에서 \(credit)원으로 변경되었습니다.")
+    }
+  }
+  
+  var dollarValue: Double { // 연산 프로퍼티
+    get {
+      return Double(credit) / 1000.0
+    }
+    
+    set {
+      credit = Int(newValue * 1000)
+      print("잔액을 \(newValue)달러로 변경 중입니다.")
+    }
+  }
+}
+
+class ForeignAccount: Account {
+  override var dollarValue: Double {
+    willSet {
+      print("잔액이 \(dollarValue)달러에서 \(newValue)달러로 변경될 예정입니다.")
+    }
+    
+    didSet {
+      print("잔액이 \(oldValue)달러에서 \(dollarValue)달러로 변경되었습니다.")
+    } 
+  }
+}
+
+let myAccount: ForeignAccount = ForeignAccount()
+// 잔액이 0원에서 1000원으로 변경될 예정입니다.
+myAccount.credit = 1000
+// 잔액이 0원에서 1000원으로 변경되었습니다.
+
+// 잔액이 1.0달러에서 2.0달러로 변경될 예정입니다.
+// 잔액이 1000원에서 2000원으로 변경될 예정입니다.
+// 잔액이 1000원에서 2000원으로 변경되었습니다.
+
+myAccount.dollarValue = 2 // 잔액을 2.0달러로 변경 중입니다.
+// 잔액이 1.0달러에서 2.0달러로 변경되었습니다.
+```
+- Note: 입출력 매개변수와 프로퍼티 감시자
+  - 만약 프로퍼티 감시자가 있는 프로퍼티를 함수의 입출력 매개변수의 전달인자로 전달한다면 항상 willSet과 didSet 감시자를 호출합니다.
+  - 함수 내부에서 값이 변경되든 변경되지 않든 간에 함수가 종료되는 시점에 값을 다시 쓰기 때문입니다.
