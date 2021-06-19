@@ -280,3 +280,66 @@ dollarInPocket = 3.5 // 주머니의 달러를 3.5달러로 변경 중입니다.
 - 저장 타입 프로퍼티는 반드시 초깃값을 설정해야 하며 지연 연산됩니다.
 - 지연 저장 프로퍼티와는 조금 다르게 다중 스레드 환경이라고 하더라도 단 한 번만 초기화된다는 보장을 받습니다.
 - 지연 연산 된다고 해서 lazy 키워드로 표시해 주지는 않습니다.
+- (코드) 타입 프로퍼티와 인스턴스 프로퍼티
+```swift
+class AClass {
+  // 저장 타입 프로퍼티
+  static var typeProperty: Int = 0
+  
+  // 저장 인스턴스 프로퍼티
+  var instanceProperty: Int = 0 {
+    didSet {
+      // Self.typeProperty는
+      // AClass.typeProperty와 같은 표현입니다.
+      Self.typeProperty = instanceProperty + 100
+    }
+  }
+  
+  // 연산 타입 프로퍼티
+  static var typeComputedProperty: Int {
+    get {
+      return typeProperty
+    }
+    
+    set {
+      typeProperty = newValue
+    }
+  }
+}
+
+Aclass.typeProperty = 123
+
+let classInstance: AClass = AClass()
+classInstance.instanceProperty = 100
+
+print(AClass.typeProperty) // 200
+print(AClass.typeComputedProperty) // 200
+```
+- 위 코드에서 보듯이 타입 프로퍼티는 인스턴스를 생성하지 않고도 사용할 수 있으며 타입에 해당하는 값입니다.
+- 그래서 인스턴스에 접근할 필요 없이 타입 이름만으로도 프로퍼티를 사용할 수 있습니다.
+- (코드) 타입 프로퍼티의 사용
+```swift
+class Account {
+  static let dollarExchangeRate: Double = 1000.0 // 타입 상수
+  
+  var credit: Int = 0 // 저장 인스턴스 프로퍼티
+  
+  var dollarValue: Double { // 연산 인스턴스 프로퍼티
+    get {
+      // Self.dollarExchangeRate는
+      // Account.dollarExchangeRate와 같은 표현입니다.
+      return Double(credit) / Self.dollarExchangeRate
+    }
+    
+    set {
+      // Self.dollarExchangeRate는
+      // Account.dollarExchangeRate와 같은 표현입니다.
+      credit = Int(newValue * Account.dollarExchangeRate)
+      print("잔액을 \(newValue)달러로 변경 중입니다.")
+    }
+  }
+}
+```
+
+### 키 경로
+- 
