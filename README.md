@@ -342,4 +342,87 @@ class Account {
 ```
 
 ### 키 경로
-- 
+- 프로퍼티의 값을 바로 꺼내오는 것이 아니라 어떤 프로퍼티의 위치만 참조하도록 할 수 있습니다.
+- 바로 키 경로(KeyPath)를 활용입니다.
+- 키 경로를 사용하여 간접적으로 특정 타입의 어떤 프로퍼티 값을 가리켜야 할지 미리 지정해두고 사용할 수 있습니다.
+- 키 경로 타입은 AnyKeyPath라는 클래스로부터 파생됩니다.
+- 제일 많이 확장된 키 경로 타입은 WritableKeyPath<Root, Value>(제네릭 타입)와 ReferenceWritableKeyPath<Root, Value> 타입입니다.
+- WritableKeyPath<Root, Value> 타입은 값 타입에 키 경로 타입으로 읽고 쓸 수 있는 경우에 적용되며,
+- ReferenceWritableKeyPath<Root, Value> 타입은 참조 타입, 즉 클래스 타입에 키 경로 타입으로 읽고 쓸 수 있는 경우에 적용됩니다.
+- 키 경로는 역슬래시(\)와 타입, 마침표(.) 경로로 구성됩니다.
+- ex) \타입이름.경로.경로.경로
+- 여기서 경로는 프로퍼티 이름이라고 생각하면 됩니다.
+- (코드) 키 경로 타입의 타입 확인
+```swift
+class Person {
+  var name: String
+  
+  init(name: String) {
+    self.name = name
+  }
+}
+
+struct Stuff {
+  var name: String
+  var owner: Person
+}
+
+print(type(of: \Person.name)) // ReferenceWritableKeyPath<Person, String>
+print(type(of: \Stuff.name)) // WritableKeyPath<Stuff, String>
+```
+- 키 경로는 기존의 키 경로에 하위 경로를 덧붙여 줄 수도 있습니다.
+- (코드) 키 경로 타입의 경로 연결
+```swift
+let keyPath = \Stuff.owner
+let nameKeyPath = keyPath.appending(path: \.name)
+```
+- 각 인스턴스의 keyPath 서브스크립트 메서드에 키 경로를 전달하여 프로퍼티에 접근할 수 있습니다.
+- (코드) keyPath 서브스크립트와 키 경로 활용
+```swift
+class Person {
+  let name: String
+  init(name: String) {
+    self.name = name
+  }
+}
+
+struct Stuff {
+  var name: String
+  var owner: Person
+}
+
+let yagom = Person(name: "yagom")
+let hana = Person(name: "hana")
+let macbook = Stuff(name: "MacBook Pro", owner: yagom)
+var iMac = Stuff(name: "iMac", owner: yagom)
+let iPhone = Stuff(name: "iPhone", owner: hana)
+
+let stuffNameKeyPath = \Stuff.name
+let ownerkeyPath = \Stuff.owner
+
+// \Stuff.owner.name과 같은 표현이 됩니다.
+let ownerNameKeyPath = ownerkeyPath.appending(path: \.name)
+
+// 키 경로와 서브스크립트를 이용해 프로퍼티에 접근하여 값을 가져옵니다.
+print(macbook[keyPath: stuffNameKeyPath]) // MacBook Pro
+print(iMac[keyPath: stuffNameKeyPath]) // iMac
+print(iPhone[keyPath: stuffNameKeyPath]) // iPhone
+
+print(macbook[keyPath: ownerNameKeyPath])// yagom
+print(iMac[keyPath: ownerNameKeyPath]) // yagom
+print(iPhone[keyPath: ownerNameKeyPath]) // hana
+
+// 키 경로와 서브스크립트를 이용해 프로퍼티에 접근하여 값을 변경합니다.
+iMac[keyPath: stuffNameKeyPath] = "iMac Pro"
+iMac[keyPath: ownerkeyPath] = hana
+
+print(iMac[keyPath: stuffNameKeyPath]) // iMac Pro
+print(iMac[keyPath: ownerNameKeyPath]) // hana
+
+// 상수로 지정한 값 타입과 읽기 전용 프로퍼티는 키 경로 서브스크립트로도 값을 바꿔줄 수 없습니다.
+// macbook[keyPath: stuffNameKeyPath] = "macbook pro touch bar" // 오류 발생!
+// yagom[keyPath: \Person.name] = "bear" // 오류 발생!
+```
+- 키 경로를 잘 활용하면 프로토콜과 마찬가지로 타입 간의 의존성을 낮추는 데 많은 도움을 줍니다.
+- 또, 애플의 프레임워크는 키-값 코딩 등 많은 곳에 키 경로를 활용하므로, 애플 프레임워크 기반의 애플리케이션을 만든다면 잘 알아두기 바랍니다.
+- Tip. 자신을 나타내는 키 경로인 \.self를 사용하면 인스턴스 그 자체를 표현하는 키 경로가 됩니다. 또, 컴파일러가 타입을 유추할 수 있는 경우에는 키 경로에서 타입 이름을 생략할 수도 있습니다.
